@@ -1,19 +1,18 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
-import { promisify } from 'node:util';
+import { randomBytes } from 'node:crypto';
 import { Repository } from 'typeorm';
+import { PasswordService } from '../auth/password.service';
+import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeProfileDto } from './dto/update-employee-profile.dto';
 import { EmployeeAuditProducer } from './employee-audit.producer';
 import { Employee } from './entity/employee.entity';
-
-const scrypt = promisify(scryptCallback);
-const PASSWORD_KEY_LENGTH = 64;
 
 @Injectable()
 export class EmployeeService {
@@ -21,9 +20,34 @@ export class EmployeeService {
     @InjectRepository(Employee)
     private readonly employees: Repository<Employee>,
     private readonly auditProducer: EmployeeAuditProducer,
+    private readonly passwordService: PasswordService,
   ) {}
 
+  async addEmployee(createEmployee: CreateEmployeeDto) {
+    const email = createEmployee.email.trim().toLowerCase();
+    if (await this.employees.findOneBy({ email })) {
+      throw new ConflictException('An employee with this email already exists');
+    }
+
+    const employee = this.employees.create({
+      name: createEmployee.name.trim(),
+      email,
+      passwordHash: await this.passwordService.hash(createEmployee.password),
+      photo: createEmployee.photo ?? null,
+      phoneNumber: createEmployee.phoneNumber ?? null,
+      role: 'employee',
+    });
+    const savedEmployee = await this.employees.save(employee);
+
+    return {
+      success: true,
+      message: 'Employee created successfully',
+      data: this.toProfile(savedEmployee),
+    };
+  }
+
   async getProfile(employeeId: string) {
+    this.validateEmployeeId(employeeId);
     const employee = await this.employees.findOne({ where: { employeeId } });
     if (!employee) {
       throw new NotFoundException('Employee not found');
@@ -37,6 +61,7 @@ export class EmployeeService {
   }
 
   async updateProfile(employeeId: string, update: UpdateEmployeeProfileDto) {
+    this.validateEmployeeId(employeeId);
     const employee = await this.employees
       .createQueryBuilder('employee')
       .addSelect('employee.passwordHash')
@@ -47,7 +72,7 @@ export class EmployeeService {
       throw new NotFoundException('Employee not found');
     }
 
-    if (!(await this.verifyPassword(update.currentPassword, employee.passwordHash))) {
+    if (!(await this.passwordService.verify(update.currentPassword, employee.passwordHash))) {
       throw new UnauthorizedException('Current password is incorrect');
     }
 
@@ -64,7 +89,7 @@ export class EmployeeService {
     }
 
     if (update.newPassword !== undefined) {
-      employee.passwordHash = await this.hashPassword(update.newPassword);
+      employee.passwordHash = await this.passwordService.hash(update.newPassword);
       changedFields.push('password');
     }
 
@@ -101,20 +126,9 @@ export class EmployeeService {
     };
   }
 
-  private async hashPassword(password: string): Promise<string> {
-    const salt = randomBytes(16).toString('hex');
-    const key = (await scrypt(password, salt, PASSWORD_KEY_LENGTH)) as Buffer;
-    return `scrypt$${salt}$${key.toString('hex')}`;
-  }
-
-  private async verifyPassword(password: string, passwordHash: string): Promise<boolean> {
-    const [algorithm, salt, expectedHex] = passwordHash.split('$');
-    if (algorithm !== 'scrypt' || !salt || !expectedHex || !/^[0-9a-f]{128}$/i.test(expectedHex)) {
-      return false;
+  private validateEmployeeId(employeeId: string): void {
+    if (!/^[1-9]\d*$/.test(employeeId)) {
+      throw new BadRequestException('employeeId must be a positive bigint');
     }
-
-    const expected = Buffer.from(expectedHex, 'hex');
-    const actual = (await scrypt(password, salt, expected.length)) as Buffer;
-    return timingSafeEqual(actual, expected);
   }
 }

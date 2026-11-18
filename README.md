@@ -25,6 +25,15 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Employee and authentication endpoints
+
+- `POST /employees` creates an employee. The request accepts `name`, `email`, `password`, and optional `photo` and `phoneNumber`; passwords must be at least 12 characters and are stored as scrypt hashes.
+- `GET /employees/:employeeId/profile` retrieves an employee profile.
+- `PATCH /employees/:employeeId/profile` updates profile fields after verifying the current password.
+- `POST /auth/login` accepts an employee `email` and `password`, and returns a safe employee profile on successful authentication. Token issuance and gateway integration are not implemented yet.
+
+Successful operations return a `{ success, message, data }` response. Password hashes are never included in response data.
+
 ## Project setup
 
 ```bash

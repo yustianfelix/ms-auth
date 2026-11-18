@@ -1,11 +1,12 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
   Param,
   Patch,
+  Post,
 } from '@nestjs/common';
+import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeProfileDto } from './dto/update-employee-profile.dto';
 import { EmployeeService } from './employee.service';
 
@@ -13,9 +14,13 @@ import { EmployeeService } from './employee.service';
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
+  @Post()
+  addEmployee(@Body() employee: CreateEmployeeDto) {
+    return this.employeeService.addEmployee(employee);
+  }
+
   @Get(':employeeId/profile')
   getProfile(@Param('employeeId') employeeId: string) {
-    this.validateEmployeeId(employeeId);
     return this.employeeService.getProfile(employeeId);
   }
 
@@ -24,13 +29,6 @@ export class EmployeeController {
     @Param('employeeId') employeeId: string,
     @Body() update: UpdateEmployeeProfileDto,
   ) {
-    this.validateEmployeeId(employeeId);
     return this.employeeService.updateProfile(employeeId, update);
-  }
-
-  private validateEmployeeId(employeeId: string): void {
-    if (!/^[1-9]\d*$/.test(employeeId)) {
-      throw new BadRequestException('employeeId must be a positive bigint');
-    }
   }
 }
