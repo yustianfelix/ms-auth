@@ -19,4 +19,8 @@ export class CreateEmployeeDto {
   @IsOptional()
   @IsString()
   phoneNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
 }

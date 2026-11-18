@@ -23,19 +23,19 @@ export class EmployeeService {
     private readonly passwordService: PasswordService,
   ) {}
 
-  async addEmployee(createEmployee: CreateEmployeeDto) {
-    const email = createEmployee.email.trim().toLowerCase();
+  async addEmployee(request: CreateEmployeeDto) {
+    const email = request.email.trim().toLowerCase();
     if (await this.employees.findOneBy({ email })) {
       throw new ConflictException('An employee with this email already exists');
     }
 
     const employee = this.employees.create({
-      name: createEmployee.name.trim(),
+      name: request.name.trim(),
       email,
-      passwordHash: await this.passwordService.hash(createEmployee.password),
-      photo: createEmployee.photo ?? null,
-      phoneNumber: createEmployee.phoneNumber ?? null,
-      role: 'employee',
+      passwordHash: await this.passwordService.hash(request.password),
+      photo: request.photo ?? null,
+      phoneNumber: request.phoneNumber ?? null,
+      role: request.role,
     });
     const savedEmployee = await this.employees.save(employee);
 
