@@ -12,4 +12,12 @@ export const appConfig = registerAs('app', () => ({
   appEnv: {
     applicationPort: process.env.PORT || 3000,
   },
+
+  kafka: {
+    brokers: (process.env.KAFKA_BROKERS ?? 'localhost:9092')
+      .split(',')
+      .map((broker) => broker.trim())
+      .filter(Boolean),
+    employeeAuditTopic: process.env.KAFKA_EMPLOYEE_AUDIT_TOPIC ?? 'employee.log',
+  },
 }));

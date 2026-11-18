@@ -13,7 +13,7 @@ export const databaseOptions = (
   database: config.getOrThrow<string>('app.database.name'),
   ssl: { rejectUnauthorized: false },
   entities: [join(__dirname, '**/*.entity{.ts,.js}')],
-  migrations: [join(__dirname, '_migration/[0-9]*-*.js')],
+  migrations: [join(__dirname, '_migrations/[0-9]*-*.js')],
   migrationsTableName: '_migrations',
   migrationsRun: true,
   synchronize: false,
