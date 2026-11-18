@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { appConfig } from './config';
 import { databaseOptions } from './database.options';
+import { AuthModule } from './app/auth/auth.module';
 import { EmployeeModule } from './app/employee/employee.module';
 
 @Module({
@@ -19,6 +20,7 @@ import { EmployeeModule } from './app/employee/employee.module';
       useFactory: databaseOptions,
       inject: [ConfigService],
     }),
+    AuthModule,
     EmployeeModule,
   ],
   controllers: [AppController],

@@ -6,7 +6,7 @@ import { UpdateEmployeeProfileDto } from '../../../src/app/employee/dto/update-e
 import { EmployeeAuditProducer } from '../../../src/app/employee/employee-audit.producer';
 import { Employee } from '../../../src/app/employee/entity/employee.entity';
 import { EmployeeService } from '../../../src/app/employee/employee.service';
-import { PasswordService } from '../../../src/app/auth/password.service';
+import { PasswordService } from '../../../src/app/common/service/password.service';
 
 const currentPassword = 'correct-current-password';
 const salt = '0123456789abcdef0123456789abcdef';
