@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PasswordService } from '../common/service/password.service';
 import { Employee } from '../employee/entity/employee.entity';
+import { photoDataUrl } from '../employee/photo';
 import { LoginDto } from './dto/login.dto';
 
 @Injectable()
@@ -31,7 +32,7 @@ export class AuthService {
         employeeId: employee.employeeId,
         name: employee.name,
         email: employee.email,
-        photo: employee.photo,
+        photo: photoDataUrl(employee.photo),
         role: employee.role,
         phoneNumber: employee.phoneNumber,
       },

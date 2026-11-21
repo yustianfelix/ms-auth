@@ -9,7 +9,8 @@ export class EmployeeAuditProducer implements OnModuleDestroy {
     private readonly topic: string;
 
     constructor(config: ConfigService) {
-        this.topic = config.get<string>('app.kafka.employeeAuditTopic') ?? 'employee.audit';
+        this.topic =
+          config.get<string>('app.kafka.employeeAuditTopic') ?? 'employee.log';
         this.producer = new Producer({
             clientId: 'ms-auth',
             bootstrapBrokers: config.get<string[]>('app.kafka.brokers') ?? ['localhost:9092'],

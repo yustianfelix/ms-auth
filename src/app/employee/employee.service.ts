@@ -13,6 +13,7 @@ import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeProfileDto } from './dto/update-employee-profile.dto';
 import { EmployeeAuditProducer } from './employee-audit.producer';
 import { Employee } from './entity/employee.entity';
+import { encodePhoto, photoDataUrl } from './photo';
 
 @Injectable()
 export class EmployeeService {
@@ -33,7 +34,7 @@ export class EmployeeService {
       name: request.name.trim(),
       email,
       passwordHash: await this.passwordService.hash(request.password),
-      photo: request.photo ?? null,
+      photo: request.photo == null ? null : await encodePhoto(request.photo),
       phoneNumber: request.phoneNumber ?? null,
       role: request.role,
     });
@@ -78,9 +79,12 @@ export class EmployeeService {
 
     const changedFields: Array<'photo' | 'phoneNumber' | 'password'> = [];
 
-    if (update.photo !== undefined && update.photo !== employee.photo) {
-      employee.photo = update.photo;
-      changedFields.push('photo');
+    if (update.photo !== undefined) {
+      const photo = update.photo === null ? null : await encodePhoto(update.photo);
+      if (photo === null ? employee.photo !== null : !photo.equals(employee.photo ?? Buffer.alloc(0))) {
+        employee.photo = photo;
+        changedFields.push('photo');
+      }
     }
 
     if (update.phoneNumber !== undefined && update.phoneNumber !== employee.phoneNumber) {
@@ -119,7 +123,7 @@ export class EmployeeService {
       employeeId: employee.employeeId,
       name: employee.name,
       email: employee.email,
-      photo: employee.photo,
+      photo: photoDataUrl(employee.photo),
       role: employee.role,
       phoneNumber: employee.phoneNumber,
       updatedAt: employee.updatedAt,

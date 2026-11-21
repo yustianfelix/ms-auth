@@ -61,4 +61,17 @@ describe('AuthService', () => {
       authService.login({ email: 'jane@example.com', password: 'incorrect-password' }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
+
+  it('returns a stored photo as a data URL', async () => {
+    const photo = Buffer.from('photo bytes');
+    getOne.mockResolvedValue(Object.assign({}, employee, { photo }));
+    verify.mockResolvedValue(true);
+
+    const response = await authService.login({
+      email: 'jane@example.com',
+      password: 'correct-password',
+    });
+
+    expect(response.data.photo).toBe(`data:image/webp;base64,${photo.toString('base64')}`);
+  });
 });

@@ -14,7 +14,7 @@ export class CreateEmployeeDto {
 
   @IsOptional()
   @IsString()
-  photo?: string;
+  photo?: string | null;
 
   @IsOptional()
   @IsString()

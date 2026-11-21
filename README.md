@@ -34,6 +34,10 @@
 
 Successful operations return a `{ success, message, data }` response. Password hashes are never included in response data.
 
+Photos are supplied in the JSON `photo` field as JPEG, PNG, or WebP base64 data URLs (up to 10 MiB of decoded image data). They are resized and converted to WebP as needed, stored as binary data of at most 1 MiB, and returned as WebP data URLs in employee profiles and login responses. Set `photo` to `null` when updating a profile to remove it. The JSON request body limit is 14 MiB.
+
+The employee creation migration defines the binary column and its size constraint directly. If it has already run, reset both the employee table and its entry in the `_migrations` table before rerunning it; this deletes existing employee data.
+
 ## Project setup
 
 ```bash

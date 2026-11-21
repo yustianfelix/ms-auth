@@ -17,8 +17,8 @@ export class Employee {
   @Column({ type: 'varchar', length: 320, unique: true })
   email: string;
 
-  @Column({ type: 'text', nullable: true })
-  photo: string | null;
+  @Column({ type: 'bytea', nullable: true })
+  photo: Buffer | null;
 
   @Column({ type: 'varchar', length: 50, default: 'employee' })
   role: string;

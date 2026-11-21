@@ -7,7 +7,7 @@ export class UpdateEmployeeProfileDto {
 
   @IsOptional()
   @IsString()
-  photo?: string;
+  photo?: string | null;
 
   @IsOptional()
   @IsString()

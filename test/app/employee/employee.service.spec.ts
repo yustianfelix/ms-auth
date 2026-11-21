@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { scryptSync } from 'node:crypto';
 import { Repository } from 'typeorm';
+import sharp from 'sharp';
 import { EmployeeProfileUpdatedEvent } from '../../../src/app/employee/dto/employee-profile-updated-event.dto';
 import { UpdateEmployeeProfileDto } from '../../../src/app/employee/dto/update-employee-profile.dto';
 import { EmployeeAuditProducer } from '../../../src/app/employee/employee-audit.producer';
@@ -140,5 +141,40 @@ describe('EmployeeService', () => {
       }),
     ).rejects.toBeInstanceOf(ConflictException);
     expect(save).not.toHaveBeenCalled();
+  });
+
+  it('stores image bytes on create and returns a data URL', async () => {
+    const input = await sharp({
+      create: { width: 2, height: 2, channels: 3, background: 'red' },
+    }).png().toBuffer();
+    const response = await service.addEmployee({
+      name: 'Jane Doe',
+      email: 'jane@example.com',
+      password: 'a-long-secure-password',
+      photo: `data:image/png;base64,${input.toString('base64')}`,
+    });
+
+    const savedPhoto = save.mock.calls[0][0].photo as Buffer;
+    expect(Buffer.isBuffer(savedPhoto)).toBe(true);
+    expect(response.data.photo).toBe(`data:image/webp;base64,${savedPhoto.toString('base64')}`);
+  });
+
+  it('updates and removes a photo and records the change', async () => {
+    const input = await sharp({
+      create: { width: 2, height: 2, channels: 3, background: 'blue' },
+    }).png().toBuffer();
+    const response = await service.updateProfile('42', {
+      currentPassword,
+      photo: `data:image/png;base64,${input.toString('base64')}`,
+    });
+
+    const savedPhoto = save.mock.calls[0][0].photo as Buffer;
+    expect(response.data.photo).toBe(`data:image/webp;base64,${savedPhoto.toString('base64')}`);
+    expect(publish).toHaveBeenCalledWith(expect.objectContaining({ changedFields: ['photo'] }));
+
+    getOne.mockResolvedValue({ ...employee, photo: savedPhoto });
+    const cleared = await service.updateProfile('42', { currentPassword, photo: null });
+    expect(cleared.data.photo).toBeNull();
+    expect(save.mock.calls[1][0].photo).toBeNull();
   });
 });
