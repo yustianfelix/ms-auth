@@ -25,6 +25,20 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Employee and authentication endpoints
+
+- `GET /employees` retrieves employees with optional `name`, `page`, and `pageSize` query parameters. Name filtering is case-insensitive; page starts at `1`, and pageSize defaults to `10` (maximum `10`).
+- `POST /employees` creates an employee. The request accepts `name`, `email`, `password`, and optional `photo` and `phoneNumber`; passwords must be at least 12 characters and are stored as scrypt hashes.
+- `GET /employees/:employeeId/profile` retrieves an employee profile.
+- `PATCH /employees/:employeeId/profile` updates profile fields after verifying the current password.
+- `POST /auth/login` accepts an employee `email` and `password`, and returns a safe employee profile on successful authentication. Token issuance and gateway integration are not implemented yet.
+
+Successful operations return a `{ success, message, data }` response. Password hashes are never included in response data.
+
+Photos are supplied in the JSON `photo` field as JPEG, PNG, or WebP base64 data URLs (up to 10 MiB of decoded image data). They are resized and converted to WebP as needed, stored as binary data of at most 1 MiB, and returned as WebP data URLs in employee profiles and login responses. Set `photo` to `null` when updating a profile to remove it. The JSON request body limit is 14 MiB.
+
+The employee creation migration defines the binary column and its size constraint directly. If it has already run, reset both the employee table and its entry in the `_migrations` table before rerunning it; this deletes existing employee data.
+
 ## Project setup
 
 ```bash
