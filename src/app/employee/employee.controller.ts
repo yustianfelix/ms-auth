@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeProfileDto } from './dto/update-employee-profile.dto';
 import { EmployeeService } from './employee.service';
@@ -8,8 +8,8 @@ import { EmployeeListRequestDto } from './dto/employee-list-request.dto';
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
-  @Post('list')
-  getEmployeeList(@Body() request: EmployeeListRequestDto) {
+  @Get()
+  getEmployeeList(@Query() request: EmployeeListRequestDto) {
     return this.employeeService.getEmployeeList(request);
   }
 

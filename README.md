@@ -27,7 +27,7 @@
 
 ## Employee and authentication endpoints
 
-- `POST /employees/list` retrieves employees with optional `name`, `page`, and `pageSize` body fields. Name filtering is case-insensitive; page starts at `1`, and pageSize defaults to `10` (maximum `10`).
+- `GET /employees` retrieves employees with optional `name`, `page`, and `pageSize` query parameters. Name filtering is case-insensitive; page starts at `1`, and pageSize defaults to `10` (maximum `10`).
 - `POST /employees` creates an employee. The request accepts `name`, `email`, `password`, and optional `photo` and `phoneNumber`; passwords must be at least 12 characters and are stored as scrypt hashes.
 - `GET /employees/:employeeId/profile` retrieves an employee profile.
 - `PATCH /employees/:employeeId/profile` updates profile fields after verifying the current password.
