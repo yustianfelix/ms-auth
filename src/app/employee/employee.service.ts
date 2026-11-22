@@ -7,13 +7,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'node:crypto';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { PasswordService } from '../common/service/password.service';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeProfileDto } from './dto/update-employee-profile.dto';
 import { EmployeeAuditProducer } from './employee-audit.producer';
 import { Employee } from './entity/employee.entity';
 import { encodePhoto, photoDataUrl } from './photo';
+import { EmployeeListRequestDto } from './dto/employee-list-request.dto';
 
 @Injectable()
 export class EmployeeService {
@@ -47,13 +48,43 @@ export class EmployeeService {
     };
   }
 
-  async getEmployeeList() {
-    const employees = await this.employees.find();
+  async getEmployeeList(
+    queryOrName: EmployeeListRequestDto | string = {},
+    pageArg = 1,
+    pageSizeArg = 10,
+  ) {
+    const query =
+      typeof queryOrName === 'string'
+        ? { name: queryOrName, page: pageArg, pageSize: pageSizeArg }
+        : queryOrName;
+    const name = typeof query.name === 'string' ? query.name.trim() : '';
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 10;
+
+    if (!Number.isInteger(page) || page < 1) {
+      throw new BadRequestException('page must be a positive integer');
+    }
+    if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 10) {
+      throw new BadRequestException('pageSize must be between 1 and 10');
+    }
+
+    const [employees, total] = await this.employees.findAndCount({
+      where: name ? { name: ILike(`%${name}%`) } : undefined,
+      order: { employeeId: 'ASC' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
 
     return {
       success: true,
       message: 'Employees retrieved successfully',
       data: employees.map((employee) => this.toProfile(employee)),
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
     };
   }
 
@@ -83,32 +114,49 @@ export class EmployeeService {
       throw new NotFoundException('Employee not found');
     }
 
-    if (!(await this.passwordService.verify(update.currentPassword, employee.passwordHash))) {
+    if (
+      !(await this.passwordService.verify(
+        update.currentPassword,
+        employee.passwordHash,
+      ))
+    ) {
       throw new UnauthorizedException('Current password is incorrect');
     }
 
     const changedFields: Array<'photo' | 'phoneNumber' | 'password'> = [];
 
     if (update.photo !== undefined) {
-      const photo = update.photo === null ? null : await encodePhoto(update.photo);
-      if (photo === null ? employee.photo !== null : !photo.equals(employee.photo ?? Buffer.alloc(0))) {
+      const photo =
+        update.photo === null ? null : await encodePhoto(update.photo);
+      if (
+        photo === null
+          ? employee.photo !== null
+          : !photo.equals(employee.photo ?? Buffer.alloc(0))
+      ) {
         employee.photo = photo;
         changedFields.push('photo');
       }
     }
 
-    if (update.phoneNumber !== undefined && update.phoneNumber !== employee.phoneNumber) {
+    if (
+      update.phoneNumber !== undefined &&
+      update.phoneNumber !== employee.phoneNumber
+    ) {
       employee.phoneNumber = update.phoneNumber;
       changedFields.push('phoneNumber');
     }
 
     if (update.newPassword !== undefined) {
-      employee.passwordHash = await this.passwordService.hash(update.newPassword);
+      employee.passwordHash = await this.passwordService.hash(
+        update.newPassword,
+      );
       changedFields.push('password');
     }
 
     if (changedFields.length === 0) {
-      throw new BadRequestException('Provide at least one changed profile field');
+      throw new BadRequestException(
+        'Provide at least one changed profile field',
+      );
     }
 
     await this.employees.save(employee);

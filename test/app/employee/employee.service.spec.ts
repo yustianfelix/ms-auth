@@ -30,13 +30,13 @@ describe('EmployeeService', () => {
   let save: jest.Mock;
   let publish: jest.Mock;
   let findOneBy: jest.Mock;
-  let find: jest.Mock;
+  let findAndCount: jest.Mock;
   let hash: jest.Mock;
   let verify: jest.Mock;
 
   beforeEach(() => {
     findOne = jest.fn().mockResolvedValue({ ...employee });
-    find = jest.fn().mockResolvedValue([{ ...employee }]);
+    findAndCount = jest.fn().mockResolvedValue([[{ ...employee }], 1]);
     getOne = jest.fn().mockResolvedValue({ ...employee });
     save = jest.fn().mockImplementation(async (value: Employee) => value);
     publish = jest.fn().mockResolvedValue(undefined);
@@ -50,7 +50,7 @@ describe('EmployeeService', () => {
       getOne,
     };
     const repository = {
-      find,
+      findAndCount,
       findOne,
       findOneBy,
       create: jest.fn((value: Partial<Employee>) => value),
@@ -81,10 +81,16 @@ describe('EmployeeService', () => {
     expect(response.data).not.toHaveProperty('passwordHash');
   });
 
-  it('returns all employee profiles without password data', async () => {
-    const response = await service.getEmployees();
+  it('returns a filtered, paginated employee list without password data', async () => {
+    const response = await service.getEmployeeList({ name: 'Jane', page: 2, pageSize: 10 });
 
-    expect(find).toHaveBeenCalled();
+    expect(findAndCount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        skip: 10,
+        take: 10,
+        where: expect.objectContaining({ name: expect.anything() }),
+      }),
+    );
     expect(response.success).toBe(true);
     expect(response.message).toBe('Employees retrieved successfully');
     expect(response.data).toEqual([
@@ -99,6 +105,12 @@ describe('EmployeeService', () => {
       },
     ]);
     expect(response.data[0]).not.toHaveProperty('passwordHash');
+    expect(response.pagination).toEqual({
+      page: 2,
+      pageSize: 10,
+      total: 1,
+      totalPages: 1,
+    });
   });
 
   it('returns a success response after updating the employee profile', async () => {
