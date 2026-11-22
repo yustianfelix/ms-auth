@@ -14,6 +14,11 @@ import { EmployeeService } from './employee.service';
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
+  @Get()
+  getEmployeeList() {
+    return this.employeeService.getEmployeeList();
+  }
+
   @Post()
   addEmployee(@Body() employee: CreateEmployeeDto) {
     return this.employeeService.addEmployee(employee);

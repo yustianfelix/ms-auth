@@ -27,6 +27,7 @@
 
 ## Employee and authentication endpoints
 
+- `GET /employees` retrieves all employees.
 - `POST /employees` creates an employee. The request accepts `name`, `email`, `password`, and optional `photo` and `phoneNumber`; passwords must be at least 12 characters and are stored as scrypt hashes.
 - `GET /employees/:employeeId/profile` retrieves an employee profile.
 - `PATCH /employees/:employeeId/profile` updates profile fields after verifying the current password.

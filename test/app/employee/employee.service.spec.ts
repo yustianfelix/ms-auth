@@ -30,11 +30,13 @@ describe('EmployeeService', () => {
   let save: jest.Mock;
   let publish: jest.Mock;
   let findOneBy: jest.Mock;
+  let find: jest.Mock;
   let hash: jest.Mock;
   let verify: jest.Mock;
 
   beforeEach(() => {
     findOne = jest.fn().mockResolvedValue({ ...employee });
+    find = jest.fn().mockResolvedValue([{ ...employee }]);
     getOne = jest.fn().mockResolvedValue({ ...employee });
     save = jest.fn().mockImplementation(async (value: Employee) => value);
     publish = jest.fn().mockResolvedValue(undefined);
@@ -48,6 +50,7 @@ describe('EmployeeService', () => {
       getOne,
     };
     const repository = {
+      find,
       findOne,
       findOneBy,
       create: jest.fn((value: Partial<Employee>) => value),
@@ -76,6 +79,26 @@ describe('EmployeeService', () => {
       updatedAt: employee.updatedAt,
     });
     expect(response.data).not.toHaveProperty('passwordHash');
+  });
+
+  it('returns all employee profiles without password data', async () => {
+    const response = await service.getEmployees();
+
+    expect(find).toHaveBeenCalled();
+    expect(response.success).toBe(true);
+    expect(response.message).toBe('Employees retrieved successfully');
+    expect(response.data).toEqual([
+      {
+        employeeId: '42',
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        photo: null,
+        role: 'employee',
+        phoneNumber: null,
+        updatedAt: employee.updatedAt,
+      },
+    ]);
+    expect(response.data[0]).not.toHaveProperty('passwordHash');
   });
 
   it('returns a success response after updating the employee profile', async () => {

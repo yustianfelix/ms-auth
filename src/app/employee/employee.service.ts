@@ -36,7 +36,7 @@ export class EmployeeService {
       passwordHash: await this.passwordService.hash(request.password),
       photo: request.photo == null ? null : await encodePhoto(request.photo),
       phoneNumber: request.phoneNumber ?? null,
-      role: request.role,
+      role: request.role ?? 'employee',
     });
     const savedEmployee = await this.employees.save(employee);
 
@@ -44,6 +44,16 @@ export class EmployeeService {
       success: true,
       message: 'Employee created successfully',
       data: this.toProfile(savedEmployee),
+    };
+  }
+
+  async getEmployeeList() {
+    const employees = await this.employees.find();
+
+    return {
+      success: true,
+      message: 'Employees retrieved successfully',
+      data: employees.map((employee) => this.toProfile(employee)),
     };
   }
 
